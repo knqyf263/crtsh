@@ -1,0 +1,19 @@
+language: go
+
+sudo: false
+addons:
+  apt:
+    packages:
+    - ruby
+    - ruby-dev
+    - build-essential
+    - rpm
+
+go:
+  - 1.9
+script:
+  - make dep
+  - make test
+after_success:
+  - gem install --no-ri --no-rdoc fpm
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
