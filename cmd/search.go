@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/knqyf263/crtsh/fetcher"
@@ -48,6 +47,7 @@ type Result struct {
 	MinCertID         int    `json:"min_cert_id"`
 	MinEntryTimestamp string `json:"min_entry_timestamp"`
 	NotBefore         string `json:"not_before"`
+	NotAfter          string `json:"not_after"`
 }
 
 func search() (err error) {
@@ -85,17 +85,10 @@ func search() (err error) {
 
 	var urls []string
 	var results []Result
-	jsons := strings.Split(string(b), "}")
-	for _, j := range jsons {
-		if len(j) == 0 {
-			continue
-		}
-		j += "}"
-		var result Result
-		if err = json.Unmarshal([]byte(j), &result); err != nil {
-			return errors.Wrap(err, "Failed to unmarshal json")
-		}
-		results = append(results, result)
+
+	err = json.Unmarshal(b, &results)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unmarshal json")
 	}
 
 	if query != "" {
@@ -129,14 +122,15 @@ func search() (err error) {
 		}
 	} else if domain != "" {
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Name", "Issuer", "Not Before"})
+		table.SetHeader([]string{"Name", "Issuer", "Not Before", "Not After"})
 		table.SetColumnColor(tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiRedColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
 			tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
 			tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
 		)
 		for _, result := range results {
 			if !viper.GetBool("plain") {
-				table.Append([]string{result.NameValue, result.IssuerName, result.NotBefore})
+				table.Append([]string{result.NameValue, result.IssuerName, result.NotBefore, result.NotAfter})
 			} else {
 				fmt.Println(result.NameValue)
 			}
